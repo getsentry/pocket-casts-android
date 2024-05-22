@@ -54,6 +54,8 @@ class AppLifecycleObserver constructor(
         applicationScope = applicationScope,
     )
 
+//  private val recorder = WindowRecorder()
+
     fun setup() {
         appLifecycleOwner.lifecycle.addObserver(this)
         handleNewInstallOrUpgrade()
@@ -64,11 +66,13 @@ class AppLifecycleObserver constructor(
         super.onResume(owner)
         appLifecycleAnalytics.onApplicationEnterForeground()
         FeatureFlag.refresh()
+//        recorder.startRecording(appContext)
     }
 
     override fun onPause(owner: LifecycleOwner) {
         super.onPause(owner)
         appLifecycleAnalytics.onApplicationEnterBackground()
+//        recorder.stopRecording()
     }
 
     override fun onDestroy(owner: LifecycleOwner) {

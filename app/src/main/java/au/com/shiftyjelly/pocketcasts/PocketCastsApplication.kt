@@ -115,7 +115,14 @@ class PocketCastsApplication : Application(), Configuration.Provider {
         }
 
         SentryAndroid.init(this) { options ->
-            options.dsn = if (settings.sendCrashReports.value) settings.getSentryDsn() else ""
+            options.dsn = "https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559"
+            options.isDebug = true
+        options.isEnablePrettySerializationOutput = false
+            options.isEnableUserInteractionBreadcrumbs = true
+            options.experimental.sessionReplay.sessionSampleRate = 1.0
+            options.experimental.sessionReplay.errorSampleRate = 1.0
+            options.experimental.sessionReplay.redactAllImages = false
+            options.experimental.sessionReplay.redactAllText = false
             options.setTag(SentryHelper.GLOBAL_TAG_APP_PLATFORM, AppPlatform.MOBILE.value)
         }
 

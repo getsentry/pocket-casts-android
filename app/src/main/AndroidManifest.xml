@@ -630,7 +630,7 @@
         <!-- Disable Sentry exception tracking so we can turn it on based on the user preference -->
         <meta-data android:name="io.sentry.auto-init" android:value="false" />
         <!-- Pass in the Sentry DSN -->
-        <meta-data android:name="au.com.shiftyjelly.pocketcasts.sentryDsn" android:value="${sentryDsn}"/>
+        <meta-data android:name="au.com.shiftyjelly.pocketcasts.sentryDsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559"/>
     </application>
 
 </manifest>

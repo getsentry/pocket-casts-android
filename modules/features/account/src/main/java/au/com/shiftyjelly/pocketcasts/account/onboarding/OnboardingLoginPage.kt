@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -138,6 +139,7 @@ internal fun OnboardingLoginPage(
             Spacer(Modifier.height(16.dp))
 
             RowButton(
+                modifier = Modifier.testTag("log_in"),
                 text = stringResource(LR.string.onboarding_log_in),
                 enabled = state.enableSubmissionFields,
                 onClick = { viewModel.logIn(onLoginComplete) },

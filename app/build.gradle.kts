@@ -79,10 +79,16 @@ sentry {
     tracingInstrumentation {
         features.set(EnumSet.allOf(InstrumentationFeature::class.java) - InstrumentationFeature.FILE_IO)
     }
+    telemetry.set(false)
+    autoInstallation.enabled.set(false)
 }
 
 dependencies {
     // features
+    implementation("io.sentry:sentry-replay:1.0.0")
+    implementation("io.sentry:sentry-android-core:7.6.0")
+    implementation("io.sentry:sentry-android-okhttp:7.6.0")
+    implementation("io.sentry:sentry-compose-android:7.6.0")
     implementation(project(":modules:features:account"))
     implementation(project(":modules:features:discover"))
     implementation(project(":modules:features:endofyear"))

@@ -17,6 +17,7 @@ android {
 }
 
 dependencies {
+  implementation("io.sentry:sentry-android-okhttp:7.6.0")
     implementation(project(":modules:services:analytics"))
     implementation(project(":modules:services:localization"))
     implementation(project(":modules:services:model"))

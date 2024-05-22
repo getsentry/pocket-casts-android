@@ -42,7 +42,7 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.rxkotlin.Singles
 import io.reactivex.schedulers.Schedulers
-import io.sentry.Sentry
+//import io.sentry.Sentry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -550,7 +550,7 @@ class PodcastSyncProcess(
             }
             records.put(record)
         } catch (e: JSONException) {
-            Sentry.captureException(e)
+//            Sentry.captureException(e)
             Timber.e(e, "Unable to save bookmark")
         }
     }

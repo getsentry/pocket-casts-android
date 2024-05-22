@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -282,7 +283,7 @@ private fun LogInButton(onClick: () -> Unit) {
         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.theme.colors.primaryText01),
         includePadding = false,
         onClick = onClick,
-        modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp)
+        modifier = Modifier.testTag("log_in_onboarding").padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp)
     )
 }
 

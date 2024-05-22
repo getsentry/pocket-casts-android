@@ -1,6 +1,5 @@
 package au.com.shiftyjelly.pocketcasts.utils
 
-import io.sentry.Sentry
 import java.io.IOException
 import java.util.concurrent.CancellationException
 import javax.net.ssl.SSLException
@@ -12,7 +11,7 @@ object SentryHelper {
         if (shouldIgnoreExceptions(throwable)) {
             return
         }
-        Sentry.captureException(throwable)
+//        Sentry.captureException(throwable)
     }
 
     fun recordException(message: String, throwable: Throwable) {

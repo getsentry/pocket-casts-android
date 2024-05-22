@@ -62,3 +62,14 @@ include(":modules:services:ui")
 include(":modules:services:utils")
 include(":modules:services:views")
 include(":modules:services:sharedtest")
+
+includeBuild("../../../sentry-java") {
+  dependencySubstitution {
+//    substitute(module("io.sentry:sentry-bom")).using(project(":sentry-bom"))
+    substitute(module("io.sentry:sentry")).using(project(":sentry"))
+    substitute(module("io.sentry:sentry-android-core")).using(project(":sentry-android-core"))
+    substitute(module("io.sentry:sentry-replay")).using(project(":sentry-android-replay"))
+    substitute(module("io.sentry:sentry-android-okhttp")).using(project(":sentry-android-okhttp"))
+    substitute(module("io.sentry:sentry-compose-android")).using(project(":sentry-compose"))
+  }
+}

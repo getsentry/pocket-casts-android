@@ -74,7 +74,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
-import io.sentry.Sentry
+//import io.sentry.Sentry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -1012,13 +1012,13 @@ open class PlaybackManager @Inject constructor(
                 } else {
                     event.message
                 }
-                Sentry.withScope { scope ->
-                    episode?.uuid?.let { scope.setTag("episodeUuid", it) }
-                    SentryHelper.recordException(
-                        message = "Illegal playback state encountered",
-                        throwable = event.error ?: IllegalStateException(event.message)
-                    )
-                }
+//                Sentry.withScope { scope ->
+//                    episode?.uuid?.let { scope.setTag("episodeUuid", it) }
+//                    SentryHelper.recordException(
+//                        message = "Illegal playback state encountered",
+//                        throwable = event.error ?: IllegalStateException(event.message)
+//                    )
+//                }
                 playbackStateRelay.accept(playbackState.copy(state = PlaybackState.State.ERROR, lastErrorMessage = errorMessage, lastChangeFrom = "onPlayerError"))
             }
         }
@@ -1624,7 +1624,7 @@ open class PlaybackManager @Inject constructor(
                             },
                             onError = {
                                 Timber.e(it, "Error observing episode")
-                                Sentry.captureException(it)
+//                                Sentry.captureException(it)
                             }
                         )
                 }
@@ -1800,7 +1800,7 @@ open class PlaybackManager @Inject constructor(
             } ?: run {
                 val message = "notificationPermissionChecker was null (this should never happen)"
                 LogBuffer.e(LogBuffer.TAG_PLAYBACK, message)
-                Sentry.addBreadcrumb(message)
+//                Sentry.addBreadcrumb(message)
                 manager.notify(notificationTag, NotificationBroadcastReceiver.NOTIFICATION_ID, notification)
             }
         } catch (e: Exception) {

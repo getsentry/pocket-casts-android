@@ -28,6 +28,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.sentry.HttpStatusCodeRange
+import io.sentry.okhttp.SentryOkHttpInterceptor
 import kotlinx.coroutines.runBlocking
 import okhttp3.Cache
 import okhttp3.Dispatcher
@@ -90,6 +92,9 @@ class ServersModule {
             val cache = Cache(cacheDirectory, cacheSize.toLong())
             var builder = OkHttpClient.Builder()
                 .addNetworkInterceptor(INTERCEPTOR_CACHE_SHOW_NOTES_MODIFIER)
+                .addInterceptor(SentryOkHttpInterceptor(failedRequestStatusCodes = listOf(
+                  HttpStatusCodeRange(400, 599)
+                )))
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
@@ -155,6 +160,9 @@ class ServersModule {
         var builder = OkHttpClient.Builder()
             .addNetworkInterceptor(INTERCEPTOR_CACHE_MODIFIER)
             .addNetworkInterceptor(INTERCEPTOR_USER_AGENT)
+            .addInterceptor(SentryOkHttpInterceptor(failedRequestStatusCodes = listOf(
+              HttpStatusCodeRange(400, 599)
+            )))
             .connectTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
@@ -234,6 +242,9 @@ class ServersModule {
         var builder = OkHttpClient.Builder()
             .dispatcher(dispatcher)
             .addNetworkInterceptor(INTERCEPTOR_USER_AGENT)
+            .addInterceptor(SentryOkHttpInterceptor(failedRequestStatusCodes = listOf(
+                HttpStatusCodeRange(400, 599)
+            )))
             .connectTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)

@@ -19,7 +19,7 @@ import au.com.shiftyjelly.pocketcasts.compose.AppThemeWithBackground
 import au.com.shiftyjelly.pocketcasts.compose.bars.ThemedTopAppBar
 import au.com.shiftyjelly.pocketcasts.compose.components.SettingRow
 import au.com.shiftyjelly.pocketcasts.ui.theme.Theme
-import io.sentry.Sentry
+//import io.sentry.Sentry
 import au.com.shiftyjelly.pocketcasts.localization.R as LR
 
 @Composable
@@ -84,7 +84,7 @@ private fun SendCrashSetting(
         secondaryText = "Send an exception to Sentry",
         icon = rememberVectorPainter(Icons.Outlined.BugReport),
         modifier = modifier.clickable {
-            Sentry.captureException(Exception("Test crash"))
+//            Sentry.captureException(Exception("Test crash"))
         }
     )
 }
