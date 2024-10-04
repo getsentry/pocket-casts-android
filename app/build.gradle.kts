@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.sentry)
-    alias(libs.plugins.google.services)
+//    alias(libs.plugins.google.services)
     alias(libs.plugins.kotlin.parcelize)
 }
 
@@ -36,6 +36,15 @@ android {
         compose = true
     }
 
+  signingConfigs {
+    getByName("debug") {
+      storeFile = rootProject.file("debug.keystore")
+      storePassword = "android"
+      keyAlias = "androiddebugkey"
+      keyPassword = "android"
+    }
+  }
+
     buildTypes {
         named("debug") {
             applicationIdSuffix = ".debug"
@@ -50,6 +59,7 @@ android {
         }
 
         named("release") {
+          signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             val pocketcastsSentryDsn: String by project
             if (pocketcastsSentryDsn.isNotBlank()) {
@@ -87,6 +97,7 @@ dependencies {
     // features
     implementation("io.sentry:sentry-replay:1.0.0")
     implementation("io.sentry:sentry-android-core:7.6.0")
+  implementation("io.sentry:sentry-android-ndk:7.6.0")
     implementation("io.sentry:sentry-android-okhttp:7.6.0")
     implementation("io.sentry:sentry-compose-android:7.6.0")
     implementation(project(":modules:features:account"))

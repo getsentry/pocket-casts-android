@@ -52,7 +52,7 @@ fun RectangleCover(
         imageResId?.let {
             Image(
                 painter = painterResource(it),
-                contentDescription = null,
+                contentDescription = "$it",
             )
         }
     }

@@ -17,7 +17,7 @@ import au.com.shiftyjelly.pocketcasts.images.R as IR
 @Composable
 fun HorizontalLogoText(
     modifier: Modifier = Modifier,
-    contentDescription: String? = null,
+    contentDescription: String? = "Logo description",
 ) {
     val logoColor = if (MaterialTheme.theme.isLight) Color.Black else Color.White
     Image(

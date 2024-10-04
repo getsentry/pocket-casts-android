@@ -41,7 +41,6 @@ import au.com.shiftyjelly.pocketcasts.utils.AppPlatform
 import au.com.shiftyjelly.pocketcasts.utils.Util
 import au.com.shiftyjelly.pocketcasts.utils.config.FirebaseConfig
 import au.com.shiftyjelly.pocketcasts.utils.featureflag.UserTier
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -61,7 +60,6 @@ class SettingsImpl @Inject constructor(
     @PublicSharedPreferences private val sharedPreferences: SharedPreferences,
     @PrivateSharedPreferences private val privatePreferences: SharedPreferences,
     @ApplicationContext private val context: Context,
-    private val firebaseRemoteConfig: FirebaseRemoteConfig,
     private val moshi: Moshi
 ) : Settings {
 
@@ -851,7 +849,7 @@ class SettingsImpl @Inject constructor(
     }
 
     private fun getRemoteConfigLong(key: String): Long {
-        val value = firebaseRemoteConfig.getLong(key)
+        val value = 0L
         return if (value == 0L) (FirebaseConfig.defaults[key] as? Long ?: 0L) else value
     }
 

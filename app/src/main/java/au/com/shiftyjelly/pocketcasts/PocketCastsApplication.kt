@@ -40,219 +40,224 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.HiltAndroidApp
 import io.sentry.Sentry
+import io.sentry.SentryOptions
+import io.sentry.SentryReplayOptions
 import io.sentry.android.core.SentryAndroid
+import io.sentry.android.replay.redactAllImages
+import io.sentry.android.replay.redactAllText
 import io.sentry.protocol.User
+import java.io.File
+import java.util.concurrent.Executors
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.File
-import java.util.concurrent.Executors
-import javax.inject.Inject
 
 @HiltAndroidApp
 class PocketCastsApplication : Application(), Configuration.Provider {
 
-    @Inject lateinit var appLifecycleObserver: AppLifecycleObserver
-    @Inject lateinit var statsManager: StatsManager
-    @Inject lateinit var podcastManager: PodcastManager
-    @Inject lateinit var episodeManager: EpisodeManager
-    @Inject lateinit var settings: Settings
-    @Inject lateinit var fileStorage: FileStorage
-    @Inject lateinit var playlistManager: PlaylistManager
-    @Inject lateinit var playbackManager: PlaybackManager
-    @Inject lateinit var downloadManager: DownloadManager
-    @Inject lateinit var notificationHelper: NotificationHelper
-    @Inject lateinit var workerFactory: HiltWorkerFactory
-    @Inject lateinit var subscriptionManager: SubscriptionManager
-    @Inject lateinit var userEpisodeManager: UserEpisodeManager
-    @Inject lateinit var appIcon: AppIcon
-    @Inject lateinit var coilImageLoader: ImageLoader
-    @Inject lateinit var userManager: UserManager
-    @Inject lateinit var tracksTracker: TracksAnalyticsTracker
-    @Inject lateinit var bumpStatsTracker: AnonymousBumpStatsTracker
-    @Inject lateinit var syncManager: SyncManager
-    @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
+  @Inject lateinit var appLifecycleObserver: AppLifecycleObserver
+  @Inject lateinit var statsManager: StatsManager
+  @Inject lateinit var podcastManager: PodcastManager
+  @Inject lateinit var episodeManager: EpisodeManager
+  @Inject lateinit var settings: Settings
+  @Inject lateinit var fileStorage: FileStorage
+  @Inject lateinit var playlistManager: PlaylistManager
+  @Inject lateinit var playbackManager: PlaybackManager
+  @Inject lateinit var downloadManager: DownloadManager
+  @Inject lateinit var notificationHelper: NotificationHelper
+  @Inject lateinit var workerFactory: HiltWorkerFactory
+  @Inject lateinit var subscriptionManager: SubscriptionManager
+  @Inject lateinit var userEpisodeManager: UserEpisodeManager
+  @Inject lateinit var appIcon: AppIcon
+  @Inject lateinit var coilImageLoader: ImageLoader
+  @Inject lateinit var userManager: UserManager
+  @Inject lateinit var tracksTracker: TracksAnalyticsTracker
+  @Inject lateinit var bumpStatsTracker: AnonymousBumpStatsTracker
+  @Inject lateinit var syncManager: SyncManager
+  @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
 
-    override fun onCreate() {
-        if (BuildConfig.DEBUG) {
-            StrictMode.setThreadPolicy(
-                StrictMode.ThreadPolicy.Builder()
-                    .detectAll()
-                    .penaltyLog()
-                    .build()
-            )
-            StrictMode.setVmPolicy(
-                StrictMode.VmPolicy.Builder()
-                    .detectLeakedSqlLiteObjects()
-                    .detectLeakedClosableObjects()
-                    .penaltyLog()
-                    // .penaltyDeath()
-                    .build()
-            )
+  override fun onCreate() {
+    if (BuildConfig.DEBUG) {
+      StrictMode.setThreadPolicy(
+        StrictMode.ThreadPolicy.Builder()
+          .detectAll()
+          .penaltyLog()
+          .build()
+      )
+      StrictMode.setVmPolicy(
+        StrictMode.VmPolicy.Builder()
+          .detectLeakedSqlLiteObjects()
+          .detectLeakedClosableObjects()
+          .penaltyLog()
+          // .penaltyDeath()
+          .build()
+      )
+    }
+
+    super.onCreate()
+    FirebaseApp.initializeApp(this)
+
+    RxJavaUncaughtExceptionHandling.setUp()
+    setupSentry()
+    setupLogging()
+    setupAnalytics()
+    setupApp()
+  }
+
+  private fun setupAnalytics() {
+    AnalyticsTracker.register(tracksTracker, bumpStatsTracker)
+    AnalyticsTracker.init(settings)
+    AnalyticsTracker.refreshMetadata()
+  }
+
+  private fun setupSentry() {
+    Thread.getDefaultUncaughtExceptionHandler()?.let {
+      Thread.setDefaultUncaughtExceptionHandler(LogBufferUncaughtExceptionHandler(it))
+    }
+
+    SentryAndroid.init(this) { options ->
+      options.dsn = "https://ba6680fde60e11e2eae2070665fa3964@o447951.ingest.us.sentry.io/4507596011798528"
+      options.isDebug = true
+      options.isEnablePrettySerializationOutput = false
+      options.isEnableUserInteractionBreadcrumbs = true
+      options.experimental.sessionReplay.sessionSampleRate = 1.0
+      options.experimental.sessionReplay.onErrorSampleRate = 1.0
+      options.experimental.sessionReplay.redactAllImages = true
+      options.experimental.sessionReplay.redactAllText = true
+      options.setTag("redacted", "true")
+      options.setTag(SentryHelper.GLOBAL_TAG_APP_PLATFORM, AppPlatform.MOBILE.value)
+    }
+
+    // Link email to Sentry crash reports only if the user has opted in
+    if (settings.linkCrashReportsToUser.value) {
+      syncManager.getEmail()?.let { syncEmail ->
+        val user = User().apply { email = syncEmail }
+        Sentry.setUser(user)
+      }
+    }
+
+    // Setup the Firebase, the documentation says this isn't needed but in production we sometimes get the following error "FirebaseApp is not initialized in this process au.com.shiftyjelly.pocketcasts. Make sure to call FirebaseApp.initializeApp(Context) first."
+  }
+
+  override fun getWorkManagerConfiguration(): Configuration {
+    return Configuration.Builder()
+      .setWorkerFactory(workerFactory)
+      .setExecutor(Executors.newFixedThreadPool(3))
+      .setJobSchedulerJobIdRange(1000, 20000)
+      .build()
+  }
+
+  private fun setupApp() {
+    LogBuffer.i("Application", "App started. ${settings.getVersion()} (${settings.getVersionCode()})")
+
+    runBlocking {
+      appIcon.enableSelectedAlias(appIcon.activeAppIcon)
+
+      FirebaseAnalyticsTracker.setup(
+        analytics = FirebaseAnalytics.getInstance(this@PocketCastsApplication),
+        settings = settings
+      )
+      notificationHelper.setupNotificationChannels()
+      appLifecycleObserver.setup()
+
+      Coil.setImageLoader(coilImageLoader)
+
+      withContext(Dispatchers.Default) {
+        playbackManager.setup()
+        downloadManager.setup(episodeManager, podcastManager, playlistManager, playbackManager)
+
+        val isRestoreFromBackup = settings.isRestoreFromBackup()
+        // as this may be a different device clear the storage location on a restore
+        if (isRestoreFromBackup) {
+          settings.setStorageChoice(null, null)
         }
 
-        super.onCreate()
-
-        RxJavaUncaughtExceptionHandling.setUp()
-        setupSentry()
-        setupLogging()
-        setupAnalytics()
-        setupApp()
-    }
-
-    private fun setupAnalytics() {
-        AnalyticsTracker.register(tracksTracker, bumpStatsTracker)
-        AnalyticsTracker.init(settings)
-        AnalyticsTracker.refreshMetadata()
-    }
-
-    private fun setupSentry() {
-        Thread.getDefaultUncaughtExceptionHandler()?.let {
-            Thread.setDefaultUncaughtExceptionHandler(LogBufferUncaughtExceptionHandler(it))
+        // migrate old storage locations
+        val storageChoice = settings.getStorageChoice()
+        if (storageChoice == null) {
+          // the user doesn't have a storage choice, give them one
+          val storageOptions = StorageOptions()
+          val locationsAvailable = storageOptions.getFolderLocations(this@PocketCastsApplication)
+          if (locationsAvailable.size > 0) {
+            val folder = locationsAvailable[0]
+            settings.setStorageChoice(folder.filePath, folder.label)
+          } else {
+            val location = this@PocketCastsApplication.filesDir
+            settings.setStorageCustomFolder(location.absolutePath)
+          }
+        } else if (storageChoice.equals(Settings.LEGACY_STORAGE_ON_PHONE, ignoreCase = true)) {
+          val location = this@PocketCastsApplication.filesDir
+          settings.setStorageCustomFolder(location.absolutePath)
+        } else if (storageChoice.equals(Settings.LEGACY_STORAGE_ON_SD_CARD, ignoreCase = true)) {
+          val location = findExternalStorageDirectory()
+          settings.setStorageCustomFolder(location.absolutePath)
         }
 
-        SentryAndroid.init(this) { options ->
-            options.dsn = "https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559"
-            options.isDebug = true
-        options.isEnablePrettySerializationOutput = false
-            options.isEnableUserInteractionBreadcrumbs = true
-            options.experimental.sessionReplay.sessionSampleRate = 1.0
-            options.experimental.sessionReplay.errorSampleRate = 1.0
-            options.experimental.sessionReplay.redactAllImages = false
-            options.experimental.sessionReplay.redactAllText = false
-            options.setTag(SentryHelper.GLOBAL_TAG_APP_PLATFORM, AppPlatform.MOBILE.value)
+        // after the app is installed check it
+        if (isRestoreFromBackup) {
+          val podcasts = podcastManager.findSubscribed()
+          val restoredFromBackup = podcasts.isNotEmpty()
+          if (restoredFromBackup) {
+            // check to see if the episode files already exist
+            episodeManager.updateAllEpisodeStatus(EpisodeStatusEnum.NOT_DOWNLOADED)
+            fileStorage.fixBrokenFiles(episodeManager)
+            // reset stats
+            statsManager.reset()
+          }
+          settings.setRestoreFromBackupEnded()
         }
 
-        // Link email to Sentry crash reports only if the user has opted in
-        if (settings.linkCrashReportsToUser.value) {
-            syncManager.getEmail()?.let { syncEmail ->
-                val user = User().apply { email = syncEmail }
-                Sentry.setUser(user)
-            }
+        // create opml import folder
+        try {
+          fileStorage.opmlFileFolder
+        } catch (e: Exception) {
+          Timber.e(e, "Unable to create opml folder.")
         }
 
-        // Setup the Firebase, the documentation says this isn't needed but in production we sometimes get the following error "FirebaseApp is not initialized in this process au.com.shiftyjelly.pocketcasts. Make sure to call FirebaseApp.initializeApp(Context) first."
-        FirebaseApp.initializeApp(this)
+        VersionMigrationsJob.run(
+          podcastManager = podcastManager,
+          settings = settings,
+          syncManager = syncManager,
+          context = this@PocketCastsApplication
+        )
+
+        // check that we have .nomedia files in existing folders
+        fileStorage.checkNoMediaDirs()
+
+        // init the stats engine
+        statsManager.initStatsEngine()
+
+        subscriptionManager.connectToGooglePlay(this@PocketCastsApplication)
+      }
     }
 
-    override fun getWorkManagerConfiguration(): Configuration {
-        return Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .setExecutor(Executors.newFixedThreadPool(3))
-            .setJobSchedulerJobIdRange(1000, 20000)
-            .build()
+    applicationScope.launch(Dispatchers.IO) { fileStorage.fixBrokenFiles(episodeManager) }
+
+    userEpisodeManager.monitorUploads(applicationContext)
+    downloadManager.beginMonitoringWorkManager(applicationContext)
+    userManager.beginMonitoringAccountManager(playbackManager)
+
+    Timber.i("Launched ${BuildConfig.APPLICATION_ID}")
+  }
+
+  @Suppress("DEPRECATION")
+  private fun findExternalStorageDirectory(): File {
+    return Environment.getExternalStorageDirectory()
+  }
+
+  override fun onTerminate() {
+    super.onTerminate()
+    LogBuffer.i("Application", "Application terminating")
+  }
+
+  private fun setupLogging() {
+    LogBuffer.setup(File(filesDir, "logs").absolutePath)
+    if (BuildConfig.DEBUG) {
+      Timber.plant(TimberDebugTree())
     }
-
-    private fun setupApp() {
-        LogBuffer.i("Application", "App started. ${settings.getVersion()} (${settings.getVersionCode()})")
-
-        runBlocking {
-            appIcon.enableSelectedAlias(appIcon.activeAppIcon)
-
-            FirebaseAnalyticsTracker.setup(
-                analytics = FirebaseAnalytics.getInstance(this@PocketCastsApplication),
-                settings = settings
-            )
-            notificationHelper.setupNotificationChannels()
-            appLifecycleObserver.setup()
-
-            Coil.setImageLoader(coilImageLoader)
-
-            withContext(Dispatchers.Default) {
-                playbackManager.setup()
-                downloadManager.setup(episodeManager, podcastManager, playlistManager, playbackManager)
-
-                val isRestoreFromBackup = settings.isRestoreFromBackup()
-                // as this may be a different device clear the storage location on a restore
-                if (isRestoreFromBackup) {
-                    settings.setStorageChoice(null, null)
-                }
-
-                // migrate old storage locations
-                val storageChoice = settings.getStorageChoice()
-                if (storageChoice == null) {
-                    // the user doesn't have a storage choice, give them one
-                    val storageOptions = StorageOptions()
-                    val locationsAvailable = storageOptions.getFolderLocations(this@PocketCastsApplication)
-                    if (locationsAvailable.size > 0) {
-                        val folder = locationsAvailable[0]
-                        settings.setStorageChoice(folder.filePath, folder.label)
-                    } else {
-                        val location = this@PocketCastsApplication.filesDir
-                        settings.setStorageCustomFolder(location.absolutePath)
-                    }
-                } else if (storageChoice.equals(Settings.LEGACY_STORAGE_ON_PHONE, ignoreCase = true)) {
-                    val location = this@PocketCastsApplication.filesDir
-                    settings.setStorageCustomFolder(location.absolutePath)
-                } else if (storageChoice.equals(Settings.LEGACY_STORAGE_ON_SD_CARD, ignoreCase = true)) {
-                    val location = findExternalStorageDirectory()
-                    settings.setStorageCustomFolder(location.absolutePath)
-                }
-
-                // after the app is installed check it
-                if (isRestoreFromBackup) {
-                    val podcasts = podcastManager.findSubscribed()
-                    val restoredFromBackup = podcasts.isNotEmpty()
-                    if (restoredFromBackup) {
-                        // check to see if the episode files already exist
-                        episodeManager.updateAllEpisodeStatus(EpisodeStatusEnum.NOT_DOWNLOADED)
-                        fileStorage.fixBrokenFiles(episodeManager)
-                        // reset stats
-                        statsManager.reset()
-                    }
-                    settings.setRestoreFromBackupEnded()
-                }
-
-                // create opml import folder
-                try {
-                    fileStorage.opmlFileFolder
-                } catch (e: Exception) {
-                    Timber.e(e, "Unable to create opml folder.")
-                }
-
-                VersionMigrationsJob.run(
-                    podcastManager = podcastManager,
-                    settings = settings,
-                    syncManager = syncManager,
-                    context = this@PocketCastsApplication
-                )
-
-                // check that we have .nomedia files in existing folders
-                fileStorage.checkNoMediaDirs()
-
-                // init the stats engine
-                statsManager.initStatsEngine()
-
-                subscriptionManager.connectToGooglePlay(this@PocketCastsApplication)
-            }
-        }
-
-        applicationScope.launch(Dispatchers.IO) { fileStorage.fixBrokenFiles(episodeManager) }
-
-        userEpisodeManager.monitorUploads(applicationContext)
-        downloadManager.beginMonitoringWorkManager(applicationContext)
-        userManager.beginMonitoringAccountManager(playbackManager)
-
-        Timber.i("Launched ${BuildConfig.APPLICATION_ID}")
-    }
-
-    @Suppress("DEPRECATION")
-    private fun findExternalStorageDirectory(): File {
-        return Environment.getExternalStorageDirectory()
-    }
-
-    override fun onTerminate() {
-        super.onTerminate()
-        LogBuffer.i("Application", "Application terminating")
-    }
-
-    private fun setupLogging() {
-        LogBuffer.setup(File(filesDir, "logs").absolutePath)
-        if (BuildConfig.DEBUG) {
-            Timber.plant(TimberDebugTree())
-        }
-    }
+  }
 }

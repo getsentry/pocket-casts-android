@@ -117,7 +117,7 @@ private fun IconToggleSquareButton(
             enabled = enabled,
             role = Role.Checkbox,
             interactionSource = interactionSource,
-            indication = rememberRipple(bounded = true, radius = RippleRadius, color = rippleColor)
+            indication = rememberRipple(color = rippleColor, radius = RippleRadius)
         ).then(IconButtonSizeModifier),
         contentAlignment = Alignment.Center
     ) {

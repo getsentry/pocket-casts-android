@@ -86,7 +86,7 @@ fun BaseRowButton(
                         fontWeight = fontWeight,
                         modifier = Modifier
                             .padding(vertical = textVerticalPadding, horizontal = 6.dp),
-                        textAlign = TextAlign.Center,
+                        textAlign = null,
                         color = textColor
                     )
                 }

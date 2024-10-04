@@ -13,7 +13,6 @@ import au.com.shiftyjelly.pocketcasts.utils.PackageUtil
 import au.com.shiftyjelly.pocketcasts.utils.Util
 import au.com.shiftyjelly.pocketcasts.utils.featureflag.FeatureFlag
 import au.com.shiftyjelly.pocketcasts.utils.featureflag.providers.DefaultReleaseFeatureProvider
-import au.com.shiftyjelly.pocketcasts.utils.featureflag.providers.FirebaseRemoteFeatureProvider
 import au.com.shiftyjelly.pocketcasts.utils.featureflag.providers.PreferencesFeatureProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -26,7 +25,6 @@ class AppLifecycleObserver constructor(
     private val appLifecycleOwner: LifecycleOwner = ProcessLifecycleOwner.get(),
     private val preferencesFeatureProvider: PreferencesFeatureProvider,
     private val defaultReleaseFeatureProvider: DefaultReleaseFeatureProvider,
-    private val firebaseRemoteFeatureProvider: FirebaseRemoteFeatureProvider,
     private val packageUtil: PackageUtil,
     private val settings: Settings,
     private val applicationScope: CoroutineScope,
@@ -38,7 +36,6 @@ class AppLifecycleObserver constructor(
         appLifecycleAnalytics: AppLifecycleAnalytics,
         preferencesFeatureProvider: PreferencesFeatureProvider,
         defaultReleaseFeatureProvider: DefaultReleaseFeatureProvider,
-        firebaseRemoteFeatureProvider: FirebaseRemoteFeatureProvider,
         packageUtil: PackageUtil,
         settings: Settings,
         @ApplicationScope applicationScope: CoroutineScope,
@@ -48,7 +45,6 @@ class AppLifecycleObserver constructor(
         appLifecycleOwner = ProcessLifecycleOwner.get(),
         preferencesFeatureProvider = preferencesFeatureProvider,
         defaultReleaseFeatureProvider = defaultReleaseFeatureProvider,
-        firebaseRemoteFeatureProvider = firebaseRemoteFeatureProvider,
         packageUtil = packageUtil,
         settings = settings,
         applicationScope = applicationScope,
@@ -81,15 +77,15 @@ class AppLifecycleObserver constructor(
     }
 
     private fun setupFeatureFlags() {
-        val providers = if (BuildConfig.DEBUG) {
-            listOf(preferencesFeatureProvider)
-        } else {
-            listOf(
-                firebaseRemoteFeatureProvider,
-                defaultReleaseFeatureProvider
-            )
-        }
-        FeatureFlag.initialize(providers)
+//        val providers = if (BuildConfig.DEBUG) {
+//            listOf(preferencesFeatureProvider)
+//        } else {
+//            listOf(
+//                firebaseRemoteFeatureProvider,
+//                defaultReleaseFeatureProvider
+//            )
+//        }
+        FeatureFlag.initialize(            listOf(preferencesFeatureProvider))
     }
 
     private fun handleNewInstallOrUpgrade() {

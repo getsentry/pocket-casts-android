@@ -68,6 +68,7 @@ includeBuild("../../../sentry-java") {
 //    substitute(module("io.sentry:sentry-bom")).using(project(":sentry-bom"))
     substitute(module("io.sentry:sentry")).using(project(":sentry"))
     substitute(module("io.sentry:sentry-android-core")).using(project(":sentry-android-core"))
+    substitute(module("io.sentry:sentry-android-ndk")).using(project(":sentry-android-ndk"))
     substitute(module("io.sentry:sentry-replay")).using(project(":sentry-android-replay"))
     substitute(module("io.sentry:sentry-android-okhttp")).using(project(":sentry-android-okhttp"))
     substitute(module("io.sentry:sentry-compose-android")).using(project(":sentry-compose"))

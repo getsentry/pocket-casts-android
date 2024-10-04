@@ -27,7 +27,7 @@ accompanist = "0.30.1"
 android-application = "7.4.2"
 billing = "6.0.1"
 coil = "2.2.1"
-compose = "1.4.2"
+compose = "1.5.0"
 # @keep
 compose-kotlin-compiler = "1.3.0"
 coroutines = "1.6.4"
